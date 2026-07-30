@@ -10,7 +10,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link
           to="/"
-          className="text-2xl font-bold bg-gradient-to-r from-cyan-500 to-violet-500 bg-clip-text text-transparent"
+          className="text-2xl font-bold bg-linear-to-r from-cyan-500 to-violet-500 bg-clip-text text-transparent"
         >
           AI Career Copilot
         </Link>
