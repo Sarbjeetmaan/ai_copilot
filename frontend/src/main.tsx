@@ -4,6 +4,7 @@ import App from "./App";
 import "./index.css";
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "./context/AuthProvider";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -12,7 +13,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       defaultTheme="light"
       enableSystem
     >
-      <App />
+      <AuthProvider>
+        <App />
+      </AuthProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

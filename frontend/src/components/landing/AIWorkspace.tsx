@@ -14,23 +14,26 @@ const tools = [
       "Analyze ATS score, keyword match and receive AI-powered resume feedback.",
     route: "/upload",
     icon: FileSearch,
-    color: "bg-sky-500/10 text-sky-500",
+    color:
+      "bg-sky-500/15 dark:bg-sky-500/20 text-sky-500",
   },
   {
     title: "Interview Preparation",
     description:
-      "Generate personalized technical, HR and coding interview questions from your resume.",
+      "Generate personalized technical, HR and coding interview questions.",
     route: "/interview",
     icon: Brain,
-    color: "bg-violet-500/10 text-violet-500",
+    color:
+      "bg-violet-500/15 dark:bg-violet-500/20 text-violet-500",
   },
   {
     title: "Cover Letter Generator",
     description:
-      "Create professional AI-generated cover letters tailored to every application.",
+      "Generate professional AI-powered cover letters tailored for every job.",
     route: "/cover-letter",
     icon: FileSignature,
-    color: "bg-emerald-500/10 text-emerald-500",
+    color:
+      "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-500",
   },
   {
     title: "Job Recommendations",
@@ -38,7 +41,8 @@ const tools = [
       "Discover AI-powered job recommendations based on your resume and skills.",
     route: "/job-match",
     icon: Briefcase,
-    color: "bg-amber-500/10 text-amber-500",
+    color:
+      "bg-amber-500/15 dark:bg-amber-500/20 text-amber-500",
   },
 ];
 
@@ -46,45 +50,77 @@ export default function AIWorkspace() {
   const navigate = useNavigate();
 
   return (
-    <section className="mx-auto mt-20 max-w-7xl px-6">
+    <section className="mx-auto mt-24 max-w-7xl px-6">
 
-      <div className="rounded-3xl border border-zinc-200 bg-white p-10 shadow-sm">
+      <div className="rounded-3xl border border-border bg-card p-10 shadow-lg transition-colors">
+
+        {/* Heading */}
 
         <div className="mb-10">
-          <h2 className="text-3xl font-bold tracking-tight">
-            AI Workspace
+
+          <span className="rounded-full bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
+            AI Career Suite
+          </span>
+
+          <h2 className="mt-4 text-4xl font-bold tracking-tight text-foreground">
+            Your AI Workspace
           </h2>
 
-          <p className="mt-2 text-slate-500">
-            Choose any AI-powered tool to accelerate your career.
+          <p className="mt-3 max-w-2xl text-muted-foreground">
+            Access every AI-powered career tool from one place.
+            Analyze resumes, prepare for interviews, generate
+            cover letters, and discover jobs—all powered by AI.
           </p>
+
         </div>
+
+        {/* Cards */}
 
         <div className="space-y-5">
 
           {tools.map((tool) => (
+
             <button
               key={tool.title}
               onClick={() => navigate(tool.route)}
-              className="group w-full rounded-3xl border border-zinc-200 bg-white p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
+              className="
+                group
+                w-full
+                rounded-3xl
+                border
+                border-border
+                bg-background
+                p-6
+                text-left
+                transition-all
+                duration-300
+                hover:-translate-y-1
+                hover:border-primary/40
+                hover:shadow-xl
+              "
             >
+
               <div className="flex items-center justify-between">
 
                 <div className="flex items-center gap-5">
 
+                  {/* Icon */}
+
                   <div
-                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${tool.color}`}
+                    className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 group-hover:scale-110 ${tool.color}`}
                   >
-                    <tool.icon className="h-7 w-7" />
+                    <tool.icon className="h-8 w-8" />
                   </div>
+
+                  {/* Text */}
 
                   <div>
 
-                    <h3 className="text-xl font-semibold text-slate-900">
+                    <h3 className="text-xl font-semibold text-foreground">
                       {tool.title}
                     </h3>
 
-                    <p className="mt-1 text-slate-500">
+                    <p className="mt-2 max-w-2xl leading-7 text-muted-foreground">
                       {tool.description}
                     </p>
 
@@ -92,10 +128,27 @@ export default function AIWorkspace() {
 
                 </div>
 
-                <ArrowRight className="h-6 w-6 shrink-0 text-slate-400 transition-all duration-300 group-hover:translate-x-1 group-hover:text-slate-700" />
+                {/* Arrow */}
+
+                <div
+                  className="
+                    rounded-full
+                    bg-muted
+                    p-3
+                    transition-all
+                    duration-300
+                    group-hover:bg-primary
+                    group-hover:text-primary-foreground
+                    group-hover:translate-x-1
+                  "
+                >
+                  <ArrowRight className="h-5 w-5" />
+                </div>
 
               </div>
+
             </button>
+
           ))}
 
         </div>
