@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "@/services/api";
+import GuestNotice from "@/components/auth/GuestNotice";
 
 export default function InterviewPrepPage() {
   const [resume, setResume] = useState<File | null>(null);
@@ -54,6 +55,8 @@ export default function InterviewPrepPage() {
     <div className="min-h-screen bg-background px-6 py-16">
 
       <div className="mx-auto max-w-6xl">
+
+        <GuestNotice />
 
         {/* Hero */}
 

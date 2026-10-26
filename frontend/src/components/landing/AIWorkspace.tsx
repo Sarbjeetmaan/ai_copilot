@@ -50,111 +50,109 @@ export default function AIWorkspace() {
   const navigate = useNavigate();
 
   return (
-    <section className="mx-auto mt-24 max-w-7xl px-6">
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-lg transition-colors sm:p-8">
 
-      <div className="rounded-3xl border border-border bg-card p-10 shadow-lg transition-colors">
+      {/* Heading */}
 
-        {/* Heading */}
+      <div className="mb-6">
 
-        <div className="mb-10">
+        <span className="rounded-full bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
+          AI Career Suite
+        </span>
 
-          <span className="rounded-full bg-primary/10 px-4 py-1 text-sm font-medium text-primary">
-            AI Career Suite
-          </span>
+        <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground">
+          Your AI Workspace
+        </h2>
 
-          <h2 className="mt-4 text-4xl font-bold tracking-tight text-foreground">
-            Your AI Workspace
-          </h2>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Access every AI-powered career tool from one place.
+          Analyze resumes, prepare for interviews, generate
+          cover letters, and discover jobs—all powered by AI.
+        </p>
 
-          <p className="mt-3 max-w-2xl text-muted-foreground">
-            Access every AI-powered career tool from one place.
-            Analyze resumes, prepare for interviews, generate
-            cover letters, and discover jobs—all powered by AI.
-          </p>
+      </div>
 
-        </div>
+      {/* Cards */}
 
-        {/* Cards */}
+      <div className="space-y-3">
 
-        <div className="space-y-5">
+        {tools.map((tool) => (
 
-          {tools.map((tool) => (
+          <button
+            key={tool.title}
+            onClick={() => navigate(tool.route)}
+            className="
+              group
+              w-full
+              rounded-2xl
+              border
+              border-border
+              bg-background
+              p-4
+              text-left
+              transition-all
+              duration-300
+              hover:-translate-y-1
+              hover:border-primary/40
+              hover:shadow-xl
+            "
+          >
 
-            <button
-              key={tool.title}
-              onClick={() => navigate(tool.route)}
-              className="
-                group
-                w-full
-                rounded-3xl
-                border
-                border-border
-                bg-background
-                p-6
-                text-left
-                transition-all
-                duration-300
-                hover:-translate-y-1
-                hover:border-primary/40
-                hover:shadow-xl
-              "
-            >
+            <div className="flex items-center justify-between">
 
-              <div className="flex items-center justify-between">
+              <div className="flex min-w-0 items-center gap-4">
 
-                <div className="flex items-center gap-5">
-
-                  {/* Icon */}
-
-                  <div
-                    className={`flex h-16 w-16 items-center justify-center rounded-2xl transition-all duration-300 group-hover:scale-110 ${tool.color}`}
-                  >
-                    <tool.icon className="h-8 w-8" />
-                  </div>
-
-                  {/* Text */}
-
-                  <div>
-
-                    <h3 className="text-xl font-semibold text-foreground">
-                      {tool.title}
-                    </h3>
-
-                    <p className="mt-2 max-w-2xl leading-7 text-muted-foreground">
-                      {tool.description}
-                    </p>
-
-                  </div>
-
-                </div>
-
-                {/* Arrow */}
+                {/* Icon */}
 
                 <div
-                  className="
-                    rounded-full
-                    bg-muted
-                    p-3
-                    transition-all
-                    duration-300
-                    group-hover:bg-primary
-                    group-hover:text-primary-foreground
-                    group-hover:translate-x-1
-                  "
+                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-all duration-300 group-hover:scale-110 ${tool.color}`}
                 >
-                  <ArrowRight className="h-5 w-5" />
+                  <tool.icon className="h-6 w-6" />
+                </div>
+
+                {/* Text */}
+
+                <div>
+
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {tool.title}
+                  </h3>
+
+                  <p className="mt-1 line-clamp-2 text-sm leading-6 text-muted-foreground">
+                    {tool.description}
+                  </p>
+
                 </div>
 
               </div>
 
-            </button>
+              {/* Arrow */}
 
-          ))}
+              <div
+                className="
+                  ml-3
+                  shrink-0
+                  rounded-full
+                  bg-muted
+                  p-2.5
+                  transition-all
+                  duration-300
+                  group-hover:bg-primary
+                  group-hover:text-primary-foreground
+                  group-hover:translate-x-1
+                "
+              >
+                <ArrowRight className="h-4 w-4" />
+              </div>
 
-        </div>
+            </div>
+
+          </button>
+
+        ))}
 
       </div>
 
-    </section>
+    </div>
   );
 }

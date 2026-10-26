@@ -41,7 +41,7 @@ from app.services.job_recommendation_service import recommend_jobs
 
 from app.database import client, users_collection
 
-from app.auth.auth import router as auth_router
+from app.auth.auth import router as auth_router, get_optional_user
 from app.auth.dependencies import get_current_user
 
 
@@ -113,6 +113,113 @@ async def startup_db():
 
 
 # ============================================================
+# HISTORY HELPERS
+# ============================================================
+#
+# Guests can use every AI feature, but nothing is saved for them.
+# Logged-in users get each result pushed into their own array
+# inside the "users" document (resume_history, interview_history,
+# cover_letter_history, job_history).
+
+HISTORY_LIMIT = 50  # keep only the newest 50 items per feature
+
+
+async def save_history(
+    current_user: dict | None,
+    field: str,
+    item: dict,
+):
+
+    # Guest user -> nothing is saved
+    if not current_user:
+
+        print(
+            f"ℹ️ Guest user - {field} not saved."
+        )
+
+        return
+
+
+    # A saving problem must never break the AI feature itself
+    try:
+
+        await users_collection.update_one(
+
+            {
+                "_id": ObjectId(
+                    current_user["user_id"]
+                )
+            },
+
+            {
+                "$push": {
+                    field: {
+                        "$each": [item],
+                        "$slice": -HISTORY_LIMIT,
+                    }
+                }
+            },
+        )
+
+        print(
+            f"✅ {field} saved for:",
+            current_user["email"],
+        )
+
+    except Exception as e:
+
+        print(
+            f"❌ Could not save {field}:",
+            e,
+        )
+
+
+async def read_history(
+    current_user: dict | None,
+    field: str,
+):
+
+    if current_user is None:
+
+        raise HTTPException(
+            status_code=401,
+            detail="Login required to view history.",
+        )
+
+
+    user = await users_collection.find_one(
+
+        {
+            "_id": ObjectId(
+                current_user["user_id"]
+            )
+        },
+
+        {
+            field: 1
+        },
+    )
+
+
+    if not user:
+
+        raise HTTPException(
+            status_code=404,
+            detail="User not found.",
+        )
+
+
+    return {
+
+        "history": user.get(
+            field,
+            [],
+        )
+
+    }
+
+
+# ============================================================
 # HOME
 # ============================================================
 
@@ -135,8 +242,10 @@ async def upload_resume(
 
     job_description: str = Form(...),
 
+    # An expired / invalid token is treated as a guest,
+    # so the feature keeps working instead of returning 401.
     current_user: dict | None = Depends(
-        get_current_user
+        get_optional_user
     ),
 ):
 
@@ -336,10 +445,16 @@ async def upload_resume(
     # SAVE HISTORY ONLY FOR LOGGED-IN USERS
     # ========================================================
 
-    if current_user:
+    # (same item as before; the helper skips guests and never
+    #  lets a database problem break the analysis)
 
-        history_item = {
+    await save_history(
 
+        current_user,
+
+        "resume_history",
+
+        {
             "filename": file.filename,
 
             "uploaded_at": time.time(),
@@ -347,36 +462,8 @@ async def upload_resume(
             "job_description": job_description,
 
             "result": result,
-        }
-
-
-        await users_collection.update_one(
-
-            {
-                "_id": ObjectId(
-                    current_user["user_id"]
-                )
-            },
-
-            {
-                "$push": {
-                    "resume_history": history_item
-                }
-            },
-        )
-
-
-        print(
-            "✅ Resume history saved for:",
-            current_user["email"],
-        )
-
-
-    else:
-
-        print(
-            "ℹ️ Guest user - resume history not saved."
-        )
+        },
+    )
 
 
     # ========================================================
@@ -464,6 +551,10 @@ async def interview(
     file: UploadFile = File(...),
 
     job_description: str = Form(""),
+
+    current_user: dict | None = Depends(
+        get_optional_user
+    ),
 ):
 
     start = time.time()
@@ -510,11 +601,51 @@ async def interview(
     )
 
 
-    return {
+    result = {
 
         "interview_questions": questions
 
     }
+
+
+    # Save only real results (the AI service returns empty
+    # lists when it fails), and only for logged-in users.
+
+    if isinstance(questions, dict) and any(questions.values()):
+
+        await save_history(
+
+            current_user,
+
+            "interview_history",
+
+            {
+                "filename": file.filename,
+
+                "created_at": time.time(),
+
+                "job_description": job_description,
+
+                "result": result,
+            },
+        )
+
+
+    return result
+
+
+@app.get("/interview/history")
+async def get_interview_history(
+
+    current_user: dict | None = Depends(
+        get_current_user
+    ),
+):
+
+    return await read_history(
+        current_user,
+        "interview_history",
+    )
 
 
 # ============================================================
@@ -527,6 +658,10 @@ async def cover_letter(
     file: UploadFile = File(...),
 
     job_description: str = Form(...),
+
+    current_user: dict | None = Depends(
+        get_optional_user
+    ),
 ):
 
     file_path = os.path.join(
@@ -559,7 +694,43 @@ async def cover_letter(
     )
 
 
+    # Save only a real letter (empty = the AI call failed)
+
+    if isinstance(letter, dict) and letter.get("cover_letter"):
+
+        await save_history(
+
+            current_user,
+
+            "cover_letter_history",
+
+            {
+                "filename": file.filename,
+
+                "created_at": time.time(),
+
+                "job_description": job_description,
+
+                "result": letter,
+            },
+        )
+
+
     return letter
+
+
+@app.get("/cover-letter/history")
+async def get_cover_letter_history(
+
+    current_user: dict | None = Depends(
+        get_current_user
+    ),
+):
+
+    return await read_history(
+        current_user,
+        "cover_letter_history",
+    )
 
 
 # ============================================================
@@ -576,6 +747,10 @@ async def job_match(
     experience: str = Form(""),
 
     employment_type: str = Form(""),
+
+    current_user: dict | None = Depends(
+        get_optional_user
+    ),
 ):
 
     start = time.time()
@@ -622,4 +797,44 @@ async def job_match(
     )
 
 
+    # Save only real results (empty list = the AI call failed)
+
+    if isinstance(jobs, dict) and jobs.get("recommended_jobs"):
+
+        await save_history(
+
+            current_user,
+
+            "job_history",
+
+            {
+                "filename": file.filename,
+
+                "created_at": time.time(),
+
+                "filters": {
+                    "location": location,
+                    "experience": experience,
+                    "employment_type": employment_type,
+                },
+
+                "result": jobs,
+            },
+        )
+
+
     return jobs
+
+
+@app.get("/job-match/history")
+async def get_job_match_history(
+
+    current_user: dict | None = Depends(
+        get_current_user
+    ),
+):
+
+    return await read_history(
+        current_user,
+        "job_history",
+    )

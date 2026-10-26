@@ -10,6 +10,7 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { generateJobMatches } from "@/api/jobmatch";
+import GuestNotice from "@/components/auth/GuestNotice";
 type JobRecommendation = {
   title: string;
   company_type: string;
@@ -64,6 +65,8 @@ const [jobs, setJobs] = useState<JobRecommendation[]>([]);
     <div className="min-h-screen bg-background px-6 py-16">
 
       <div className="mx-auto max-w-6xl">
+
+        <GuestNotice />
 
         {/* Heading */}
 

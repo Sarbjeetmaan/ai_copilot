@@ -12,6 +12,7 @@ import api from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
+import GuestNotice from "@/components/auth/GuestNotice";
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -69,9 +70,7 @@ export default function UploadPage() {
     } catch (err) {
       console.error("Resume upload error:", err);
 
-      alert(
-        "Upload failed. Please make sure you are logged in and try again."
-      );
+      alert("Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -80,6 +79,8 @@ export default function UploadPage() {
   return (
     <div className="min-h-screen bg-background px-6 py-16">
       <div className="mx-auto max-w-5xl">
+
+        <GuestNotice />
 
         {/* Header */}
 

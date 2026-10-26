@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { generateCoverLetter } from "@/api/cover";
+import GuestNotice from "@/components/auth/GuestNotice";
 
 import {
   UploadCloud,
@@ -93,6 +94,8 @@ export default function CoverLetterPage() {
     <div className="min-h-screen bg-background px-6 py-16">
 
       <div className="mx-auto max-w-5xl">
+
+        <GuestNotice />
 
         {/* Heading */}
 

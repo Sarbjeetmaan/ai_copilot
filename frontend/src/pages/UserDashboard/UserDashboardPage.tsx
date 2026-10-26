@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   FileText,
   Mic,
@@ -15,6 +16,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/useAuth";
 import api from "@/services/api";
+
+import {
+  InterviewHistoryList,
+  CoverLetterHistoryList,
+  JobHistoryList,
+  type InterviewHistoryItem,
+  type CoverLetterHistoryItem,
+  type JobHistoryItem,
+} from "./HistoryLists";
+
+// Every history endpoint answers { history: [...] } (oldest first).
+// We show the newest first.
+async function loadHistory<T>(url: string): Promise<T[]> {
+  const response = await api.get(url);
+
+  return [...(response.data?.history || [])].reverse();
+}
 
 interface ResumeHistoryItem {
   filename: string;
@@ -68,8 +86,22 @@ export default function UserDashboardPage() {
     ResumeHistoryItem[]
   >([]);
 
+  const [interviewHistory, setInterviewHistory] = useState<
+    InterviewHistoryItem[]
+  >([]);
+
+  const [coverLetterHistory, setCoverLetterHistory] =
+    useState<CoverLetterHistoryItem[]>([]);
+
+  const [jobHistory, setJobHistory] = useState<
+    JobHistoryItem[]
+  >([]);
+
   const [loadingHistory, setLoadingHistory] =
     useState(isLoggedIn);
+
+  const [sessionExpired, setSessionExpired] =
+    useState(false);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -79,30 +111,68 @@ export default function UserDashboardPage() {
     let cancelled = false;
 
     const fetchHistory = async () => {
-      try {
-        const response = await api.get(
-          "/resume/history"
-        );
+      // All four histories load at the same time; one failing
+      // does not hide the others.
+      const [resume, interview, cover, jobs] =
+        await Promise.allSettled([
+          loadHistory<ResumeHistoryItem>(
+            "/resume/history"
+          ),
+          loadHistory<InterviewHistoryItem>(
+            "/interview/history"
+          ),
+          loadHistory<CoverLetterHistoryItem>(
+            "/cover-letter/history"
+          ),
+          loadHistory<JobHistoryItem>(
+            "/job-match/history"
+          ),
+        ]);
 
-        if (!cancelled) {
-          setResumeHistory(
-            response.data?.history || []
+      if (cancelled) {
+        return;
+      }
+
+      setResumeHistory(
+        resume.status === "fulfilled" ? resume.value : []
+      );
+
+      setInterviewHistory(
+        interview.status === "fulfilled"
+          ? interview.value
+          : []
+      );
+
+      setCoverLetterHistory(
+        cover.status === "fulfilled" ? cover.value : []
+      );
+
+      setJobHistory(
+        jobs.status === "fulfilled" ? jobs.value : []
+      );
+
+      const results = [resume, interview, cover, jobs];
+
+      results.forEach((result) => {
+        if (result.status === "rejected") {
+          console.error(
+            "Failed to fetch history:",
+            result.reason
           );
         }
-      } catch (error) {
-        console.error(
-          "Failed to fetch resume history:",
-          error
-        );
+      });
 
-        if (!cancelled) {
-          setResumeHistory([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingHistory(false);
-        }
-      }
+      // 401 = the saved login is no longer valid
+      setSessionExpired(
+        results.some(
+          (result) =>
+            result.status === "rejected" &&
+            axios.isAxiosError(result.reason) &&
+            result.reason.response?.status === 401
+        )
+      );
+
+      setLoadingHistory(false);
     };
 
     fetchHistory();
@@ -280,6 +350,25 @@ export default function UserDashboardPage() {
           </Card>
 
         </div>
+
+        {/* Guest / expired login notice */}
+
+        {(!isLoggedIn || sessionExpired) && (
+          <div className="mt-10 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-5 py-3 text-sm">
+            {sessionExpired
+              ? "Your login has expired. "
+              : "History is only saved for logged-in users. "}
+
+            <Link
+              to="/login"
+              className="font-semibold underline underline-offset-4"
+            >
+              Login
+            </Link>{" "}
+            to {sessionExpired ? "see" : "save and see"} your
+            previous work.
+          </div>
+        )}
 
         {/* ================================================= */}
         {/* PREVIOUS WORK */}
@@ -492,9 +581,10 @@ export default function UserDashboardPage() {
               Interviews
             </h3>
 
-            <div className="mt-4 rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
-              Interview history will appear here.
-            </div>
+            <InterviewHistoryList
+              items={interviewHistory}
+              loading={loadingHistory}
+            />
 
           </div>
 
@@ -508,9 +598,10 @@ export default function UserDashboardPage() {
               Cover Letters
             </h3>
 
-            <div className="mt-4 rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
-              Cover letter history will appear here.
-            </div>
+            <CoverLetterHistoryList
+              items={coverLetterHistory}
+              loading={loadingHistory}
+            />
 
           </div>
 
@@ -524,9 +615,10 @@ export default function UserDashboardPage() {
               Job Matches
             </h3>
 
-            <div className="mt-4 rounded-2xl border border-dashed p-8 text-center text-muted-foreground">
-              Job match history will appear here.
-            </div>
+            <JobHistoryList
+              items={jobHistory}
+              loading={loadingHistory}
+            />
 
           </div>
 
