@@ -1,12 +1,11 @@
-
 from functools import lru_cache
-
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
 @lru_cache(maxsize=1)
 def get_model():
+    from sentence_transformers import SentenceTransformer
+
     print("Loading embedding model...")
     model = SentenceTransformer("all-MiniLM-L6-v2")
     print("Embedding model loaded!")
@@ -19,7 +18,6 @@ def get_embedding(text: str):
 
 def similarity(text1: str, text2: str):
     model = get_model()
-
     embeddings = model.encode([text1, text2])
 
     score = cosine_similarity(
@@ -35,7 +33,6 @@ def semantic_skill_match(text, skills, threshold=0.75):
         return []
 
     model = get_model()
-
     text_embedding = model.encode([text])
     skill_embeddings = model.encode(skills)
 
