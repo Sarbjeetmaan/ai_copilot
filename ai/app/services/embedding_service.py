@@ -1,38 +1,52 @@
+
+from functools import lru_cache
+
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 
-print("Loading embedding model...")
 
-model = SentenceTransformer("all-MiniLM-L6-v2")
-
-print("Embedding model loaded!")
+@lru_cache(maxsize=1)
+def get_model():
+    print("Loading embedding model...")
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    print("Embedding model loaded!")
+    return model
 
 
 def get_embedding(text: str):
-    return model.encode(text)
+    return get_model().encode(text)
 
 
 def similarity(text1: str, text2: str):
-    emb1 = model.encode([text1])
-    emb2 = model.encode([text2])
+    model = get_model()
 
-    score = cosine_similarity(emb1, emb2)[0][0]
+    embeddings = model.encode([text1, text2])
+
+    score = cosine_similarity(
+        [embeddings[0]],
+        [embeddings[1]]
+    )[0][0]
 
     return round(float(score), 3)
 
 
 def semantic_skill_match(text, skills, threshold=0.75):
+    if not skills:
+        return []
+
+    model = get_model()
+
+    text_embedding = model.encode([text])
+    skill_embeddings = model.encode(skills)
+
+    scores = cosine_similarity(
+        text_embedding,
+        skill_embeddings
+    )[0]
 
     found = []
 
-    text_embedding = model.encode([text])
-
-    for skill in skills:
-
-        skill_embedding = model.encode([skill])
-
-        score = cosine_similarity(text_embedding, skill_embedding)[0][0]
-
+    for skill, score in zip(skills, scores):
         if score >= threshold:
             found.append({
                 "skill": skill,
