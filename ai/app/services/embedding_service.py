@@ -1,39 +1,14 @@
 
-import os
-import requests
+from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-
-MODEL_ID = "BAAI/bge-small-en-v1.5"
-API_URL = f"https://router.huggingface.co/hf-inference/models/{MODEL_ID}"
 
 
 def get_embeddings(texts):
-    token = os.getenv("HF_TOKEN")
-
-    if not token:
-        raise RuntimeError("HF_TOKEN is not configured")
-
-    response = requests.post(
-        API_URL,
-        headers={"Authorization": f"Bearer {token}"},
-        json={"inputs": texts},
-        timeout=60,
+    vectorizer = TfidfVectorizer(
+        stop_words="english",
+        ngram_range=(1, 2)
     )
-
-    response.raise_for_status()
-    embeddings = response.json()
-
-    # Convert token-level vectors into one vector per text, if returned.
-    if embeddings and isinstance(embeddings[0][0], list):
-        embeddings = [
-            [
-                sum(vector[i] for vector in item) / len(item)
-                for i in range(len(item[0]))
-            ]
-            for item in embeddings
-        ]
-
-    return embeddings
+    return vectorizer.fit_transform(texts).toarray()
 
 
 def get_embedding(text: str):
@@ -41,6 +16,9 @@ def get_embedding(text: str):
 
 
 def similarity(text1: str, text2: str):
+    if not text1.strip() or not text2.strip():
+        return 0.0
+
     embeddings = get_embeddings([text1, text2])
 
     score = cosine_similarity(
@@ -52,10 +30,12 @@ def similarity(text1: str, text2: str):
 
 
 def semantic_skill_match(text, skills, threshold=0.75):
-    if not skills:
+    if not skills or not text.strip():
         return []
 
-    embeddings = get_embeddings([text] + list(skills))
+    documents = [text] + list(skills)
+    embeddings = get_embeddings(documents)
+
     scores = cosine_similarity(
         [embeddings[0]],
         embeddings[1:]
